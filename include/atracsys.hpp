@@ -41,10 +41,9 @@ using namespace std;
 class Atracsys{
 
 public:
-	//Atracsys(const char* directory_geometries);
-	//~Atracsys();
     static shared_ptr<Atracsys> getInstance();
-	void setGeometryFolder(const char* directory_geometries);
+	void setGeometryFolder (const char* directory_geometries);
+
 	bool ServiceCallback(atracsystracking::AtracsysService::Request &req, atracsystracking::AtracsysService::Response &res);
 	bool startTracking();
 	void stopTracking();
@@ -53,6 +52,7 @@ public:
 	void closeDevice();
 	void loop();
 	std::vector<string> loadGeometries();
+
 private:
     static shared_ptr<Atracsys> instance;
     Atracsys();

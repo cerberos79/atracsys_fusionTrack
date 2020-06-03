@@ -1,28 +1,19 @@
 #include "atracsys.hpp"
 
-Atracsys::Atracsys()
-{
-	//create a list of file with geometries
+Atracsys::Atracsys(){};
 
-};
-
-shared_ptr<Atracsys> Atracsys::getInstance()
-{
+shared_ptr<Atracsys> Atracsys::getInstance(){
     if (instance == 0)
-    {
         instance = shared_ptr<Atracsys>();
-    }
-
     return instance;
 }
+
 void Atracsys::setGeometryFolder(const char* directory_geometries){
     unsigned int count_ = 0;
     boost::filesystem::path targetDir(directory_geometries);
     boost::filesystem::directory_iterator it(targetDir), eod;
-    BOOST_FOREACH (boost::filesystem::path const &p, std::make_pair(it, eod))
-                {
-                    if (is_regular_file(p))
-                    {
+    BOOST_FOREACH (boost::filesystem::path const &p, std::make_pair(it, eod)){
+                    if (is_regular_file(p)){
                         count_++;
                         size_t lastindex = (p.filename().string()).find_last_of(".");
                         files_names_.push_back((p.filename().string()).substr(0, lastindex));
@@ -31,20 +22,16 @@ void Atracsys::setGeometryFolder(const char* directory_geometries){
                         list_of_geometries_files_.push_back(file_geometry);
                     }
                 }
-
     pause_action_.store(true, boost::memory_order_relaxed);
 }
-void Atracsys::bootDevice()
-{
-	//isNotFromConsole = isLaunchedFromExplorer();
+
+void Atracsys::bootDevice(){
 	string cfgFile("");
 	lib = ftkInitExt(cfgFile.empty() ? nullptr : cfgFile.c_str(), &buffer);
-	if (lib == nullptr)
-	{
+	if (lib == nullptr){
 		cerr << buffer.data << endl;
 		error("Cannot initialize driver", !isNotFromConsole);
 	}
-	// ------------------------------------------------------------------------
 	// Retrieve the device
 	cout << "Driver is on." << endl;
 	device = DeviceData(retrieveLastDevice(lib, true, false, !isNotFromConsole));
@@ -71,17 +58,14 @@ void Atracsys::bootDevice()
 };
 
 
-std::vector<string> Atracsys::loadGeometries()
-{
-
+std::vector<string> Atracsys::loadGeometries(){
 	//add iterative way
 	//string geomFileOne( "/home/rsecoli/Documents/ROSWorkspace/src/AtracsysTracking/geometryEF.ini" );
-	for (auto i = 0; i < list_of_geometries_files_.size(); i++)
-	{
+	for (unsigned int i = 0; i < list_of_geometries_files_.size(); ++i){
+
 		ftkGeometry tmp;
 
-		if (loadGeometry(lib, sn, list_of_geometries_files_[i], tmp) == 0)
-		{
+		if (loadGeometry(lib, sn, list_of_geometries_files_[i], tmp) == 0){
 			if (ftkError::FTK_OK != ftkSetGeometry(lib, sn, &tmp))
 				checkError(lib, !isNotFromConsole);
 			geometries_.push_back(tmp);
@@ -97,7 +81,7 @@ bool Atracsys::startTracking()
 {
 	loop_thr.reset(new boost::thread(&Atracsys::loop, this));
 	loop_thr->detach();
-	std::cout << "Thread per il tracking has started." << endl;
+	puts("Tracking thread is on.");
 	return true;
 }
 
@@ -106,13 +90,10 @@ void Atracsys::loop()
 	unsigned int frame_n_ = 0;
 	std::vector< pair<int,Eigen::Matrix4f> > output;
 	output.reserve(geometries_.size());
-	do
-	{
+	do{
 		//std::cout << "Creo frame" << endl;
 		ftkFrameQuery *frame = ftkCreateFrame();
-
-		if (frame == 0)
-		{
+		if (frame == 0){
 			error("Cannot create frame instance", !isNotFromConsole);
 			//return false;
 		}
@@ -130,21 +111,17 @@ void Atracsys::loop()
 
 		/* block up to 100 ms if next frame is not available*/
 		err = ftkGetLastFrame(lib, sn, frame, 100u);
-		if (err > ftkError::FTK_OK)
-		{
+		if (err > ftkError::FTK_OK){
 			//cout << ".";
 			continue;
 		}
-		else if (err == ftkError::FTK_WAR_TEMP_INVALID)
-		{
-			cout << "temperature warning" << endl;
+		else if (err == ftkError::FTK_WAR_TEMP_INVALID){
+			cout << "\033[31m" << "temperature warning" << "\033[0m" << endl;
 		}
-		else if (err < ftkError::FTK_OK)
-		{
+		else if (err < ftkError::FTK_OK){
 			//cout << "warning: " << int32( err ) << endl;
-			if (err == ftkError::FTK_WAR_NO_FRAME)
-			{
-				cout << "warning: NO FRAME " << endl;
+			if (err == ftkError::FTK_WAR_NO_FRAME){
+                cout << "\033[31m" << "warning: NO FRAME " << "\033[0m" << endl;
 				continue;
 			}
 		}
@@ -208,8 +185,7 @@ bool Atracsys::getGeometries(std::vector<pair <int, Eigen::Matrix4f> > &out){
 
 
 void Atracsys::stopTracking(){
-pause_action_.store(true, boost::memory_order_relaxed);
-
+    pause_action_.store(true, boost::memory_order_relaxed);
 }
 
 
