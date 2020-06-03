@@ -13,6 +13,7 @@
 #include <ftkInterface.h>
 #include <algorithm>
 #include <cmath>
+#include <stdlib.h>
 #include <deque>
 #include <iomanip>
 #include <iostream>
@@ -22,9 +23,11 @@
 #include <boost/thread/thread.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
 #include <iostream>
+#include <boost/algorithm/string.hpp>
 #include <boost/atomic.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
+#include <utility>
 #include "atracsystracking/AtracsysService.h"
 #include "geometryHelper.hpp"
 #include "helpers.hpp"
@@ -38,17 +41,22 @@ using namespace std;
 class Atracsys{
 
 public:
-	Atracsys(const char* directory_geometries);
-	~Atracsys();
+	//Atracsys(const char* directory_geometries);
+	//~Atracsys();
+    static shared_ptr<Atracsys> getInstance();
+	void setGeometryFolder(const char* directory_geometries);
 	bool ServiceCallback(atracsystracking::AtracsysService::Request &req, atracsystracking::AtracsysService::Response &res);
 	bool startTracking();
 	void stopTracking();
-	bool getGeometries(std::vector<Eigen::Matrix4f> &out);
+	bool getGeometries(std::vector< pair<int, Eigen::Matrix4f> > &out);
 	void bootDevice();
 	void closeDevice();
 	void loop();
 	std::vector<string> loadGeometries();
-private:	
+private:
+    static shared_ptr<Atracsys> instance;
+    Atracsys();
+
 	DeviceData device;
 	boost::scoped_ptr<boost::thread> loop_thr;
 	ftkBuffer buffer;
@@ -60,7 +68,7 @@ private:
 	std::vector<string> list_of_geometries_files_;
 	std::vector<string> files_names_;
 	unsigned int n_geometries;
-	boost::lockfree::spsc_queue<std::vector<Eigen::Matrix4f>, boost::lockfree::capacity<10> > spsc_queue;
+	boost::lockfree::spsc_queue<std::vector< pair<int,Eigen::Matrix4f> >, boost::lockfree::capacity<10> > spsc_queue;
 	ros::ServiceServer service_;
 };
 	
