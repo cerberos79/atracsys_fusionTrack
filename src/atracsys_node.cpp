@@ -24,20 +24,19 @@ int main(int argc, char **argv){
 
     auto tmp(Atracsys::getInstance());
     tmp->setGeometryFolder(geometries_folder_.c_str());
-	tmp->bootDevice();
-	auto topics_ = tmp->loadGeometries();
+    tmp->bootDevice();
+    auto topics_ = tmp->loadGeometries();
     vector<ros::Publisher> Atrapublisher_;
     Atrapublisher_.reserve(topics_.size());
-	for(const auto& i : topics_)
-	    Atrapublisher_.push_back(n.advertise<geometry_msgs::PoseStamped>(i,1));
-
+    for(const auto& i : topics_)
+        Atrapublisher_.emplace_back(n.advertise<geometry_msgs::PoseStamped>(i,1));
 	tmp->startTracking();
 
 	this_thread::sleep_for(chrono::milliseconds(2500));
 	while (ros::ok()){
-
 		std::vector< pair<int,Eigen::Matrix4f> > out__;
 		out__.reserve(topics_.size());
+
 		if (tmp->getGeometries(out__)){
 			for(const auto &i : out__){
 				string id__ = "_" + boost::lexical_cast<std::string>(i.first);
@@ -60,6 +59,7 @@ int main(int argc, char **argv){
 				}
 			}
 		}
+		
 		ros::spinOnce();
 		loop_rate.sleep();
 	}
